@@ -28,4 +28,6 @@ int main() {
 
     B.to_host();
     C.to_host();
+
+    // TODO: compare to some other library or check output i guess
 }
