@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: false
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterNamespace: false
+  AfterStruct: false
+  BeforeElse: true
+  BeforeCatch: true
+IndentCaseLabels: false
+AccessModifierOffset: -4
+PointerAlignment: Left
+ReferenceAlignment: Left
+ReflowComments: false
