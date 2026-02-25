@@ -3,8 +3,9 @@ project(spmm LANGUAGES CXX CUDA)
 
 add_executable(spmm src/spmm.cu)
 target_include_directories(spmm PRIVATE include)
+target_include_directories(spmm SYSTEM PRIVATE vendor)
 
 target_compile_options(spmm PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror -pedantic>
-    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Werror>
+    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Werror -diag-suppress=20015,20012>
 )
