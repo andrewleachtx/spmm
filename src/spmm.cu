@@ -1,5 +1,6 @@
 #include "gpu_array.hpp"
 #include "sparse_csr.h"
+#include <iostream>
 
 constexpr int M = 1 << 10;
 constexpr int K = 1 << 10;
@@ -22,10 +23,25 @@ int main() {
     fun::gpu_array<float> C(M * N);
 
     // TODO(O): populate i, j, k, A, B, C and get nnz?
-    size_t nnz = 0;
+
+    // sample initializations
+    Eigen::MatrixXf A(3, 3);
+    A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+    Eigen::MatrixXf B_dense(3, 3);
+    B_dense << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+
+    CSR A_csr = sparse_to_CSR(dense_to_sparse(A));
+    int M = A_csr.i.size();
+    int nnz = A_csr.j.size();
+
     fun::gpu_array<size_t> i(M);
     fun::gpu_array<size_t> j(nnz);
     fun::gpu_array<float> k(nnz);
+
+    // A_csr.i.data()
+    // A_csr.j.data()
+    // A_csr.k.data()
+    // B_dense.data()
 
     // send to GPU
     fun::to_device_all(i, j, k, B);
@@ -36,6 +52,9 @@ int main() {
     C.to_host();
 
     printf("hello worlds\n");
+
+    // random_dense(4);
     test();
     // TODO: compare to some other library or check output i guess
+    //   std::cout << "\nEigen answer\n" << A*B_dense << std::endl;
 }

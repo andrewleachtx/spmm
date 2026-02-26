@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <vector>
 
 //access pointers like csr.i.data()
@@ -11,4 +12,8 @@ struct CSR {
 
 int test();
 
-CSR dense_to_sparse(Eigen::MatrixXf A);
+Eigen::SparseMatrix<float, Eigen::RowMajor> dense_to_sparse(Eigen::MatrixXf A);
+CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse);
+
+Eigen::MatrixXf random_dense(int n);
+Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n);
