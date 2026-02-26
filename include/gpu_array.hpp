@@ -14,23 +14,23 @@
 
     Also, this (can) support pinned host memory for faster DMA transfer:
     https://developer.nvidia.com/blog/how-optimize-data-transfers-cuda-cc/
-
-    Size is compile-time (N) to motivate one thing: no reallocation cost.
 */
 namespace fun {
 // TODO(A): should we use pinnedmemory true by default?
-template <typename T, size_t N, bool DoPinnedTransfer = false> class gpu_array {
+// TODO(A): should i make replusplus choose the next multiple of 2 i.e. 2^(ceil(log2(n)))
+template <typename T, bool DoPinnedTransfer = false> class gpu_array {
 public:
-    gpu_array() : host_data_{}, device_data_{} {
+    gpu_array(size_t capacity)
+        : capacity_{capacity}, host_data_{}, device_data_{} {
         static_assert(std::is_trivially_copyable_v<T>,
                       "gpu_array only supports copying trivial types!");
-        cudaTry(cudaMalloc(&device_data_, N * sizeof(T)));
+        cudaTry(cudaMalloc(&device_data_, capacity_ * sizeof(T)));
 
         if constexpr (DoPinnedTransfer) {
-            cudaTry(cudaMallocHost(&host_data_, N * sizeof(T)));
+            cudaTry(cudaMallocHost(&host_data_, capacity_ * sizeof(T)));
         }
         else {
-            host_data_ = raw_alloc_arr(N);
+            host_data_ = raw_alloc_arr(capacity_);
         }
     }
     ~gpu_array() {
@@ -47,7 +47,10 @@ public:
     gpu_array(const gpu_array&) = delete;
     gpu_array& operator=(const gpu_array&) = delete;
     gpu_array(gpu_array&& other) noexcept
-        : host_data_{other.host_data_}, device_data_{other.device_data_} {
+        : capacity_{other.capacity_}, host_data_{other.host_data_},
+          device_data_{other.device_data_} {
+
+        other.capacity_ = 0;
         other.host_data_ = nullptr;
         other.device_data_ = nullptr;
     }
@@ -60,39 +63,42 @@ public:
             else {
                 delete_arr(host_data_);
             }
+
+            capacity_ = other.capacity_;
+            host_data_ = other.host_data_;
+            device_data_ = other.device_data_;
+
+            other.capacity_ = 0;
+            other.host_data_ = nullptr;
+            other.device_data_ = nullptr;
         }
-
-        host_data_ = other.host_data_;
-        device_data_ = other.device_data_;
-
-        other.host_data_ = nullptr;
-        other.device_data_ = nullptr;
 
         return *this;
     }
 
     void to_device() {
-        cudaTry(cudaMemcpy(device_data_, host_data_, N * sizeof(T),
+        cudaTry(cudaMemcpy(device_data_, host_data_, capacity_ * sizeof(T),
                            cudaMemcpyHostToDevice));
     }
     void to_host() {
-        cudaTry(cudaMemcpy(host_data_, device_data_, N * sizeof(T),
+        cudaTry(cudaMemcpy(host_data_, device_data_, capacity_ * sizeof(T),
                            cudaMemcpyDeviceToHost));
     }
 
-    static constexpr size_t size() { return N; }
+    size_t size() const { return capacity_; }
+    size_t capacity() const { return capacity_; }
 
     T& operator[](size_t idx) { return host_data_[idx]; }
     const T& operator[](size_t idx) const { return host_data_[idx]; }
     T& at(size_t idx) {
-        if (idx >= N) {
+        if (idx >= capacity_) {
             throw std::out_of_range(".at(...) access out of range!");
         }
 
         return host_data_[idx];
     }
     const T& at(size_t idx) const {
-        if (idx >= N) {
+        if (idx >= capacity_) {
             throw std::out_of_range(".at(...) access out of range!");
         }
 
@@ -103,6 +109,7 @@ public:
 private:
     // TODO(A): We could add a compile-time debug tracker for last
     // update location to avoid sync issues
+    size_t capacity_;
     T* host_data_;
     T* device_data_;
 
@@ -113,4 +120,13 @@ private:
     }
     static void delete_arr(T* arr) { ::operator delete[](arr); }
 };
+
+template <typename... Arrays> void to_device_all(Arrays&... arrays) {
+    (arrays.to_device(), ...);
+}
+
+template <typename... Arrays> void to_host_all(Arrays&... arrays) {
+    (arrays.to_host(), ...);
+}
+
 }; // namespace fun

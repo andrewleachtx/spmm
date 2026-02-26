@@ -13,5 +13,5 @@ target_compile_options(spmm PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Werror -diag-suppress=20015,20012>
 )
 
-add_subdirectory(external/eigen-5.0.0)
-target_link_libraries(spmm PRIVATE Eigen3::Eigen)
+# add_subdirectory(external/eigen-5.0.0)
+# target_link_libraries(spmm PRIVATE Eigen3::Eigen)
