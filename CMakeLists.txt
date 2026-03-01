@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(spmm LANGUAGES CXX CUDA)
 
 add_executable(spmm
+    src/main.cu
     src/spmm.cu
     src/sparse_csr.cpp
 )
