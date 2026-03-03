@@ -14,9 +14,12 @@ __global__ void spmm_kernel(const int* row_ptr, const int* col_ptr,
     const int row = blockIdx.x * warps_per_blk + per_blk_warp;
     const int col = blockIdx.y * WARP_SZ + lane;
 
-    if (row >= M || col >= N) {
+    // row is uniform across all 32 lanes in a warp, so this exits the entire warp safely
+    if (row >= M) {
         return;
     }
+
+    const bool col_valid = (col < N);
 
     const int row_size = row_ptr[row + 1] - row_ptr[row];
 
@@ -31,7 +34,7 @@ __global__ void spmm_kernel(const int* row_ptr, const int* col_ptr,
     float acc = 0.0f;
     const int x = row_ptr[row];
 
-    for (int col_offset = 0; col_offset < row_size; col_offset += 32) {
+    for (int col_offset = 0; col_offset < row_size; col_offset += WARP_SZ) {
         int idx = x + lane + col_offset;
 
         // at the end some lanes exceed the row, so treat as zero contribution to the inner product
@@ -44,14 +47,18 @@ __global__ void spmm_kernel(const int* row_ptr, const int* col_ptr,
 
         const unsigned int all_mask = 0xffffffff;
 
-        for (int src_lane = 0; src_lane < 32; src_lane++) {
+        for (int src_lane = 0; src_lane < WARP_SZ; src_lane++) {
             // __shfl_sync(mask, local var to share, thread/lane to store in return to)
             int k = __shfl_sync(all_mask, per_lane_k, src_lane);
-            int a = __shfl_sync(all_mask, per_lane_a, src_lane);
+            float a = __shfl_sync(all_mask, per_lane_a, src_lane);
 
-            acc += a * B[k * N + col];
+            if (col_valid) {
+                acc += a * B[k * N + col];
+            }
         }
     }
 
-    C[row * N + col] = acc;
+    if (col_valid) {
+        C[row * N + col] = acc;
+    }
 }

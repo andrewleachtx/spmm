@@ -16,7 +16,7 @@ int main() {
 
     int n = 33;
     Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen = random_sparse(n);
-   Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_eigen = random_dense(n);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_eigen = random_dense(n);
 
     // TODO: can make the usage ./spmm <m> <k> <n> and use random generation with those preset sizes later
     const size_t M { static_cast<size_t>(A_eigen.rows()) };
@@ -61,8 +61,6 @@ int main() {
         C.device_ptr(), M, N);
 
     C.to_host();
-
-    // TODO add more thorough comparison/testing, we cant print a 1000x1000 i guess
 
     Eigen::Map<RowMatrixXf> C_eigen(&C[0], M, N);
 
