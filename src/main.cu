@@ -14,9 +14,9 @@ int main() {
     // RowMatrixXf B_eigen(3, 3);
     // B_eigen << 1, 2, 3, 4, 5, 6, 7, 8, 9;
 
-    int n = 33;
-    Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen = random_sparse(n);
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_eigen = random_dense(n);
+    int n = 4;
+    Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen = random_sparse(n, true);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_eigen = random_dense(n, true);
 
     // TODO: can make the usage ./spmm <m> <k> <n> and use random generation with those preset sizes later
     const size_t M { static_cast<size_t>(A_eigen.rows()) };
@@ -65,8 +65,8 @@ int main() {
     Eigen::Map<RowMatrixXf> C_eigen(&C[0], M, N);
 
     Eigen::MatrixXf ref = A_eigen * B_eigen;
-    // std::cout << "CUDA:\n" << C_eigen << "\n";
-    // std::cout << "Eigen:\n" << ref << "\n";
+    std::cout << "CUDA:\n" << C_eigen << "\n";
+    std::cout << "Eigen:\n" << ref << "\n";
     Eigen::MatrixXf diff = ref - C_eigen;
     double frobeniusNorm = diff.norm();
     std::cout << "Frobenius Norm of diff: " << frobeniusNorm << std::endl;
