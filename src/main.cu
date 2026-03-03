@@ -9,17 +9,21 @@ using RowMatrixXf =
 int main() {
 
     // sample initializations
-    Eigen::MatrixXf A_eigen(3, 3);
-    A_eigen << 1, 2, 3, 4, 5, 6, 7, 8, 9;
-    RowMatrixXf B_eigen(3, 3);
-    B_eigen << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+    // Eigen::MatrixXf A_eigen(3, 3);
+    // A_eigen << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+    // RowMatrixXf B_eigen(3, 3);
+    // B_eigen << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+
+    int n = 33;
+    Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen = random_sparse(n);
+   Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> B_eigen = random_dense(n);
 
     // TODO: can make the usage ./spmm <m> <k> <n> and use random generation with those preset sizes later
     const size_t M { static_cast<size_t>(A_eigen.rows()) };
     const size_t K { static_cast<size_t>(A_eigen.cols()) };
     const size_t N { static_cast<size_t>(B_eigen.cols()) };
 
-    CSR A_csr = sparse_to_CSR(dense_to_sparse(A_eigen));
+    CSR A_csr = sparse_to_CSR((A_eigen));
     const size_t nnz = A_csr.j.size();
 
     // Allocate and populate device versions of A, B, C
@@ -47,6 +51,8 @@ int main() {
         static_cast<uint32_t>((M + warps_per_blk - 1) / warps_per_blk),
         static_cast<uint32_t>((N + WARP_SZ - 1) / WARP_SZ), 1
     };
+    std::cout << "Blocks per grid x " << blks_per_grid.x << std::endl;
+    std::cout << "Blocks per grid y " << blks_per_grid.y << std::endl;
 
     fun::to_device_all(i, j, k, B);
 
@@ -61,6 +67,9 @@ int main() {
     Eigen::Map<RowMatrixXf> C_eigen(&C[0], M, N);
 
     Eigen::MatrixXf ref = A_eigen * B_eigen;
-    std::cout << "CUDA:\n" << C_eigen << "\n";
-    std::cout << "Eigen:\n" << ref << "\n";
+    // std::cout << "CUDA:\n" << C_eigen << "\n";
+    // std::cout << "Eigen:\n" << ref << "\n";
+    Eigen::MatrixXf diff = ref - C_eigen;
+    double frobeniusNorm = diff.norm();
+    std::cout << "Frobenius Norm of diff: " << frobeniusNorm << std::endl;
 }

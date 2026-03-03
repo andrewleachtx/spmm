@@ -49,17 +49,23 @@ CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse) {
 // TODO (O) helpers to make big sparse and dense matrices
 
 // Random matrix of size nxn with uniformly distributed random values in [0, 9]
-Eigen::MatrixXf random_dense(int n) {
-    Eigen::MatrixXf A = Eigen::MatrixXf::Random(n, n); 
-    
-    A = A*5+Eigen::MatrixXf::Constant(n, n, 5.0);
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+random_dense(int n)
+{
+    using RowMajorMatrixXf =
+        Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+    RowMajorMatrixXf A = RowMajorMatrixXf::Random(n, n);
+
+    A = A * 5 + RowMajorMatrixXf::Constant(n, n, 5.0f);
     A = A.array().floor().matrix();
-    std::cout << A << std::endl;
+
+    // std::cout << A << std::endl;
     return A;
 }
-
 Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n) {
 
+    // std::mt19937 gen(std::random_device{}());
     std::mt19937 gen;
     std::uniform_int_distribution<int> index_dist(0, n - 1);
     std::uniform_int_distribution<int> value_dist(0, 9);
@@ -70,7 +76,7 @@ Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n) {
         int i = index_dist(gen);
         int j = index_dist(gen);
         int k = value_dist(gen);
-        printf("%d\n", k);
+        // printf("%d\n", k);
         
         triplets.emplace_back(i, j, k);
     }

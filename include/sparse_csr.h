@@ -15,5 +15,5 @@ int test();
 Eigen::SparseMatrix<float, Eigen::RowMajor> dense_to_sparse(Eigen::MatrixXf A);
 CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse);
 
-Eigen::MatrixXf random_dense(int n);
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> random_dense(int n);
 Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n);
