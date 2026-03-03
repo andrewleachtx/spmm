@@ -49,24 +49,24 @@ CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse) {
 // TODO (O) helpers to make big sparse and dense matrices
 
 // Random matrix of size nxn with uniformly distributed random values in [0, 9]
-Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-random_dense(int n)
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> random_dense(int n)
 {
-    using RowMajorMatrixXf =
-        Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    std::mt19937 gen(42);
+    std::uniform_int_distribution<int> dist(0, 9);
 
-    RowMajorMatrixXf A = RowMajorMatrixXf::Random(n, n);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A(n, n);
 
-    A = A * 5 + RowMajorMatrixXf::Constant(n, n, 5.0f);
-    A = A.array().floor().matrix();
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < n; ++j)
+            A(i, j) = static_cast<float>(dist(gen));
 
-    // std::cout << A << std::endl;
     return A;
 }
+
 Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n) {
 
     // std::mt19937 gen(std::random_device{}());
-    std::mt19937 gen;
+    std::mt19937 gen(0);
     std::uniform_int_distribution<int> index_dist(0, n - 1);
     std::uniform_int_distribution<int> value_dist(0, 9);
     int nnz = n;
