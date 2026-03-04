@@ -2,8 +2,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <iostream>
-#include <vector>
 #include <random>
+#include <vector>
 
 int test() {
     Eigen::MatrixXf A(3, 3);
@@ -49,37 +49,38 @@ CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse) {
 // TODO (O) helpers to make big sparse and dense matrices
 
 // Random matrix of size nxn with uniformly distributed random values in [0, 9]
-Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> random_dense(int n, bool asFloat)
-{
+RowMatrixXf random_dense(int n, bool asFloat) {
     std::mt19937 gen(0);
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A(n, n);
+    RowMatrixXf A(n, n);
 
     if (asFloat) {
         std::uniform_real_distribution<float> dist(0, 9);
-        
+
         for (int i = 0; i < n; ++i)
             for (int j = 0; j < n; ++j)
                 A(i, j) = static_cast<float>(dist(gen));
-    } else {
+    }
+    else {
         std::uniform_int_distribution<int> dist(0, 9);
-        
+
         for (int i = 0; i < n; ++i)
             for (int j = 0; j < n; ++j)
                 A(i, j) = static_cast<float>(dist(gen));
     }
 
-
-
     return A;
 }
 
-Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, bool asFloat) {
+Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, int nnz,
+                                                          bool asFloat) {
+    if (nnz < 0 || nnz > n * n) {
+        nnz = n;
+    }
 
     // std::mt19937 gen(std::random_device{}());
     std::mt19937 gen(0);
-    
-    int nnz = n;
-    std::vector<Eigen::Triplet<int>> triplets;
+
+    std::vector<Eigen::Triplet<float>> triplets;
     triplets.reserve(nnz);
     std::uniform_int_distribution<int> index_dist(0, n - 1);
     if (asFloat) {
@@ -87,28 +88,25 @@ Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, bool asFloat) {
         for (int x = 0; x < nnz; x++) {
             int i = index_dist(gen);
             int j = index_dist(gen);
-            int k = value_dist(gen);
-            // printf("%d\n", k);
-            
+            float k = value_dist(gen);
             triplets.emplace_back(i, j, k);
         }
-    } else {
+    }
+    else {
         std::uniform_int_distribution<int> value_dist(0, 9);
         for (int x = 0; x < nnz; x++) {
             int i = index_dist(gen);
             int j = index_dist(gen);
-            int k = value_dist(gen);
-            // printf("%d\n", k);
-            
+            float k = static_cast<float>(value_dist(gen));
             triplets.emplace_back(i, j, k);
         }
     }
 
-
     Eigen::SparseMatrix<float, Eigen::RowMajor> A(n, n);
-    A.setFromTriplets(triplets.begin(), triplets.end(), [](float /*old*/, float new_val) {
-        return new_val;   // overwrite instead of sum
-    });
+    A.setFromTriplets(triplets.begin(), triplets.end(),
+                      [](float /*old*/, float new_val) {
+                          return new_val; // overwrite instead of sum
+                      });
 
     A.makeCompressed();
     return A;

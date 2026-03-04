@@ -3,6 +3,9 @@
 #include <Eigen/Sparse>
 #include <vector>
 
+using RowMatrixXf =
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 //access pointers like csr.i.data()
 struct CSR {
     std::vector<int> i;
@@ -15,6 +18,6 @@ int test();
 Eigen::SparseMatrix<float, Eigen::RowMajor> dense_to_sparse(Eigen::MatrixXf A);
 CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse);
 
-Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> random_dense(int n, bool asFloat=false);
-Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, bool asFloat=false);
-
+RowMatrixXf random_dense(int n, bool asFloat = false);
+Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, int nnz = -1,
+                                                          bool asFloat = false);

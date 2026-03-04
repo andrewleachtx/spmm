@@ -21,7 +21,7 @@ namespace fun {
 template <typename T, bool DoPinnedTransfer = false> class gpu_array {
 public:
     gpu_array(size_t capacity)
-        : capacity_{capacity}, host_data_{}, device_data_{} {
+        : capacity_ { capacity }, host_data_ {}, device_data_ {} {
         static_assert(std::is_trivially_copyable_v<T>,
                       "gpu_array only supports copying trivial types!");
         cudaTry(cudaMalloc(&device_data_, capacity_ * sizeof(T)));
@@ -32,6 +32,9 @@ public:
         else {
             host_data_ = raw_alloc_arr(capacity_);
         }
+    }
+    gpu_array(const T* src, size_t n) : gpu_array(n) {
+        memcpy(host_data_, src, n * sizeof(T));
     }
     ~gpu_array() {
         cudaFree(device_data_);
@@ -47,8 +50,8 @@ public:
     gpu_array(const gpu_array&) = delete;
     gpu_array& operator=(const gpu_array&) = delete;
     gpu_array(gpu_array&& other) noexcept
-        : capacity_{other.capacity_}, host_data_{other.host_data_},
-          device_data_{other.device_data_} {
+        : capacity_ { other.capacity_ }, host_data_ { other.host_data_ },
+          device_data_ { other.device_data_ } {
 
         other.capacity_ = 0;
         other.host_data_ = nullptr;
