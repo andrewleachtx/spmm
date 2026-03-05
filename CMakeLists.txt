@@ -11,7 +11,7 @@ target_include_directories(spmm SYSTEM PRIVATE vendor)
 
 target_compile_options(spmm PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror -pedantic>
-    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Werror -diag-suppress=20015,20012>
+    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Werror --expt-relaxed-constexpr -diag-suppress=20015,20012,20013>
 )
 
 find_package(CUDAToolkit REQUIRED)
@@ -19,3 +19,5 @@ target_link_libraries(spmm PRIVATE CUDA::cusparse)
 
 # add_subdirectory(external/eigen-5.0.0)
 # target_link_libraries(spmm PRIVATE Eigen3::Eigen)
+add_subdirectory(vendor/eigen EXCLUDE_FROM_ALL)
+target_link_libraries(spmm PRIVATE Eigen3::Eigen)
