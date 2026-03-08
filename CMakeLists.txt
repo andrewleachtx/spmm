@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
-project(spmm LANGUAGES CXX CUDA)
+project(spmm LANGUAGES C CXX CUDA)
 
 add_executable(spmm
     src/main.cu
     src/spmm.cu
     src/sparse_csr.cpp
+    vendor/mmio/mmio.c
 )
 target_include_directories(spmm PRIVATE include)
-target_include_directories(spmm SYSTEM PRIVATE vendor)
+target_include_directories(spmm SYSTEM PRIVATE vendor vendor/mmio)
 
 target_compile_options(spmm PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror -pedantic>

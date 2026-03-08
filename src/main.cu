@@ -4,32 +4,60 @@
 #include <cassert>
 #include <cusparse.h>
 #include <iostream>
+#include <random>
+#include <string>
 
 using RowMatrixXf =
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
+static bool ends_with_mtx(const std::string& s) {
+    return s.size() >= 4 && s.compare(s.size() - 4, 4, ".mtx") == 0;
+}
+
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        // TODO: can make the usage ./spmm <m> <k> <n> later, but square matrices is good for now
-        printf("Usage: ./spmm <n>\n");
+    if (argc < 2 || argc > 3) {
+        printf("Usage: ./spmm <n> (random nxn sparse matrix)\n");
+        printf(
+            "./spmm <file.mtx> [ncols in B] (load from Matrix Market file)\n");
         return 1;
     }
 
-    const int n = std::stoi(argv[1]);
-    const size_t nnz = n * 100;
+    CSR A_csr;
+    int M_int, K_int;
+    size_t N;
 
-    Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen =
-        random_sparse(n, nnz, true);
-    RowMatrixXf B_eigen = random_dense(n, true);
+    if (!ends_with_mtx(argv[1])) {
+        // Random mode: ./spmm <n>
+        const int n = std::stoi(argv[1]);
+        const size_t nnz = n * 100;
 
-    // Eigen MM (CPU) //
-    // Eigen::MatrixXf reference = A_eigen * B_eigen;
+        Eigen::SparseMatrix<float, Eigen::RowMajor> A_eigen =
+            random_sparse(n, nnz, true);
 
-    const size_t M { static_cast<size_t>(A_eigen.rows()) };
-    const size_t K { static_cast<size_t>(A_eigen.cols()) };
-    const size_t N { static_cast<size_t>(B_eigen.cols()) };
+        M_int = static_cast<int>(A_eigen.rows());
+        K_int = static_cast<int>(A_eigen.cols());
+        N = static_cast<size_t>(n);
 
-    CSR A_csr = sparse_to_CSR((A_eigen));
+        A_csr = sparse_to_CSR(A_eigen);
+    }
+    else {
+        // File mode: ./spmm <file.mtx> [feat_size]
+        A_csr = load_mtx(argv[1], M_int, K_int);
+        N = (argc >= 3) ? static_cast<size_t>(std::stoi(argv[2])) : 128;
+    }
+
+    const size_t M = static_cast<size_t>(M_int);
+    const size_t K = static_cast<size_t>(K_int);
+
+    // Generate random dense matrix B of size K x N
+    RowMatrixXf B_eigen(K, N);
+    {
+        std::mt19937 gen(0);
+        std::uniform_real_distribution<float> dist(0, 9);
+        for (size_t r = 0; r < K; ++r)
+            for (size_t c = 0; c < N; ++c)
+                B_eigen(r, c) = dist(gen);
+    }
 
     // Allocate and populate device versions of A, B, C
     const size_t actual_nnz = A_csr.j.size();
@@ -55,8 +83,6 @@ int main(int argc, char** argv) {
         static_cast<uint32_t>((M + warps_per_blk - 1) / warps_per_blk),
         static_cast<uint32_t>((N + WARP_SZ - 1) / WARP_SZ), 1
     };
-    // std::cout << "Blocks per grid x " << blks_per_grid.x << std::endl;
-    // std::cout << "Blocks per grid y " << blks_per_grid.y << std::endl;
 
     fun::to_device_all(i, j, k, B);
 
@@ -78,9 +104,6 @@ int main(int argc, char** argv) {
     C.to_host();
 
     Eigen::Map<RowMatrixXf> C_eigen(&C[0], M, N);
-
-    // Eigen::MatrixXf diff = reference - C_eigen;
-    // assert(diff.norm() < 1e-5f && "Ours norm != 0");
 
     // cuSPARSE SPMM //
     fun::gpu_array<float> C_cusp { M * N };
@@ -136,8 +159,6 @@ int main(int argc, char** argv) {
     cusparseDestroy(cusparse_handle);
 
     Eigen::Map<RowMatrixXf> C_cusp_eigen(&C_cusp[0], M, N);
-    // Eigen::MatrixXf diff_cusp = reference - C_cusp_eigen;
-    // assert(diff_cusp.norm() < 1e-5f && "cuSPARSE norm != 0");
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

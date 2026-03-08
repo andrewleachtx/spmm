@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <string>
 #include <vector>
 
 using RowMatrixXf =
@@ -21,3 +22,7 @@ CSR sparse_to_CSR(Eigen::SparseMatrix<float, Eigen::RowMajor> A_sparse);
 RowMatrixXf random_dense(int n, bool asFloat = false);
 Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, int nnz = -1,
                                                           bool asFloat = false);
+
+// Load a sparse matrix from a Matrix Market (.mtx) file
+// Returns CSR and sets M (rows) and N (cols) by ref of the loaded matrix
+CSR load_mtx(const std::string& path, int& M, int& N);

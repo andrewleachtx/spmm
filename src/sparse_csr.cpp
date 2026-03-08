@@ -1,9 +1,14 @@
 #include "sparse_csr.h"
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <cstdio>
 #include <iostream>
 #include <random>
 #include <vector>
+
+extern "C" {
+#include "mmio.h"
+}
 
 int test() {
     Eigen::MatrixXf A(3, 3);
@@ -110,4 +115,108 @@ Eigen::SparseMatrix<float, Eigen::RowMajor> random_sparse(int n, int nnz,
 
     A.makeCompressed();
     return A;
+}
+
+CSR load_mtx(const std::string& path, int& M, int& N) {
+    FILE* f = fopen(path.c_str(), "r");
+    if (!f) {
+        fprintf(stderr, "Error: could not open file %s\n", path.c_str());
+        exit(1);
+    }
+
+    MM_typecode matcode;
+    if (mm_read_banner(f, &matcode) != 0) {
+        fprintf(stderr, "Error: could not read Matrix Market banner in %s\n",
+                path.c_str());
+        fclose(f);
+        exit(1);
+    }
+
+    if (!mm_is_matrix(matcode) || !mm_is_sparse(matcode)) {
+        fprintf(stderr, "Error: only sparse matrices are supported (got %s)\n",
+                mm_typecode_to_str(matcode));
+        fclose(f);
+        exit(1);
+    }
+
+    if (mm_is_complex(matcode)) {
+        fprintf(stderr, "Error: complex matrices are not supported\n");
+        fclose(f);
+        exit(1);
+    }
+
+    int nz;
+    if (mm_read_mtx_crd_size(f, &M, &N, &nz) != 0) {
+        fprintf(stderr, "Error: could not read matrix size\n");
+        fclose(f);
+        exit(1);
+    }
+
+    std::cout << "Loading " << path << ": " << M << "x" << N << ", " << nz
+              << " nonzeros";
+    if (mm_is_symmetric(matcode) || mm_is_skew(matcode))
+        std::cout << " (symmetric)";
+    if (mm_is_pattern(matcode))
+        std::cout << " (pattern)";
+    std::cout << std::endl;
+
+    bool is_symmetric = mm_is_symmetric(matcode) || mm_is_skew(matcode);
+    bool is_pattern = mm_is_pattern(matcode);
+    bool is_integer = mm_is_integer(matcode);
+
+    // Reserve extra space for symmetric matrices (off-diag entries get mirrored)
+    std::vector<Eigen::Triplet<float>> triplets;
+    triplets.reserve(is_symmetric ? nz * 2 : nz);
+
+    for (int idx = 0; idx < nz; idx++) {
+        int row, col;
+        double val = 1.0;
+
+        if (is_pattern) {
+            if (fscanf(f, "%d %d", &row, &col) != 2) {
+                fprintf(stderr, "Error: premature EOF at entry %d\n", idx);
+                fclose(f);
+                exit(1);
+            }
+        }
+        else if (is_integer) {
+            int ival;
+            if (fscanf(f, "%d %d %d", &row, &col, &ival) != 3) {
+                fprintf(stderr, "Error: premature EOF at entry %d\n", idx);
+                fclose(f);
+                exit(1);
+            }
+            val = static_cast<double>(ival);
+        }
+        else {
+            if (fscanf(f, "%d %d %lg", &row, &col, &val) != 3) {
+                fprintf(stderr, "Error: premature EOF at entry %d\n", idx);
+                fclose(f);
+                exit(1);
+            }
+        }
+
+        // Matrix Market is 1-based
+        row--;
+        col--;
+
+        triplets.emplace_back(row, col, static_cast<float>(val));
+
+        if (is_symmetric && row != col) {
+            float sym_val = mm_is_skew(matcode) ? -static_cast<float>(val)
+                                                : static_cast<float>(val);
+            triplets.emplace_back(col, row, sym_val);
+        }
+    }
+
+    fclose(f);
+
+    Eigen::SparseMatrix<float, Eigen::RowMajor> A(M, N);
+    A.setFromTriplets(triplets.begin(), triplets.end());
+    A.makeCompressed();
+
+    std::cout << "Loaded: " << A.rows() << "x" << A.cols() << ", "
+              << A.nonZeros() << " nonzeros (after expansion)" << std::endl;
+
+    return sparse_to_CSR(A);
 }
