@@ -1,0 +1,55 @@
+[100%] Built target spmm
+=== Flan_1565 (B ncols=128) ===
+Loading data/Flan_1565/Flan_1565.mtx: 1564794x1564794, 59485419 nonzeros (symmetric)
+Loaded: 1564794x1564794, 117406044 nonzeros (after expansion)
+Ours: 153.784 ms
+cuSPARSE: 149.892 ms
+
+=== audikw_1 (B ncols=128) ===
+Loading data/audikw_1/audikw_1.mtx: 943695x943695, 39297771 nonzeros (symmetric)
+Loaded: 943695x943695, 77651847 nonzeros (after expansion)
+Ours: 104.885 ms
+cuSPARSE: 118.587 ms
+
+=== bcsstk01 (B ncols=128) ===
+Loading data/bcsstk01/bcsstk01.mtx: 48x48, 224 nonzeros (symmetric)
+Loaded: 48x48, 400 nonzeros (after expansion)
+Ours: 2.36544 ms
+cuSPARSE: 16.0819 ms
+
+=== gearbox (B ncols=128) ===
+Loading data/gearbox/gearbox.mtx: 153746x153746, 4617075 nonzeros (symmetric) (pattern)
+Loaded: 153746x153746, 9080404 nonzeros (after expansion)
+Ours: 19.8488 ms
+cuSPARSE: 22.3748 ms
+
+=== hcircuit (B ncols=128) ===
+Loading data/hcircuit/hcircuit.mtx: 105676x105676, 513072 nonzeros
+Loaded: 105676x105676, 513072 nonzeros (after expansion)
+Ours: 7.19571 ms
+cuSPARSE: 17.3791 ms
+
+=== lpl1 (B ncols=128) ===
+Loading data/lpl1/lpl1.mtx: 32460x32460, 180248 nonzeros (symmetric) (pattern)
+Loaded: 32460x32460, 328036 nonzeros (after expansion)
+Ours: 4.12234 ms
+cuSPARSE: 15.6367 ms
+
+=== mip1 (B ncols=128) ===
+Loading data/mip1/mip1.mtx: 66463x66463, 5209641 nonzeros (symmetric) (pattern)
+Loaded: 66463x66463, 10352819 nonzeros (after expansion)
+Ours: 56.861 ms
+cuSPARSE: 22.2989 ms
+
+=== pkustk12 (B ncols=128) ===
+Loading data/pkustk12/pkustk12.mtx: 94653x94653, 3803485 nonzeros (symmetric) (pattern)
+Loaded: 94653x94653, 7512317 nonzeros (after expansion)
+Ours: 21.398 ms
+cuSPARSE: 23.3945 ms
+
+=== roadNet-CA (B ncols=128) ===
+Loading data/roadNet-CA/roadNet-CA.mtx: 1971281x1971281, 2766607 nonzeros (symmetric) (pattern)
+Loaded: 1971281x1971281, 5533214 nonzeros (after expansion)
+Ours: 94.6427 ms
+cuSPARSE: 41.7097 ms
+
